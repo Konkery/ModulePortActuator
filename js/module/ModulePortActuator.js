@@ -1,4 +1,5 @@
-// const PIN_MODES = ['output', 'analog', 'input', 'input_pullup', 'input_pulldown', 'opendrain', 'af_output', 'af_opendrain', 'auto'];
+const ClassActuator = require('ModuleActuator.min.js');
+// all port modes ['output', 'analog', 'input', 'input_pullup', 'input_pulldown', 'opendrain', 'af_output', 'af_opendrain', 'auto'];
 const OUTPUT_PIN_MODES = ['output', 'analog', 'opendrain', 'af_output', 'af_opendrain', 'auto'];
 
 /**
@@ -9,44 +10,71 @@ const OUTPUT_PIN_MODES = ['output', 'analog', 'opendrain', 'af_output', 'af_open
 class ClassPortActuator extends ClassActuator {
     constructor(opts) {
         ClassActuator.call(this, opts);
+        this._TypeOutSignals = opts.typeInSignals;
 
+        if (this._QuantityChannel !== this._Pins.length)
+            throw new Error('QuantityChannel must be equal to pins count');
+        // Тип сигнала определяет команду записи в порт
+        if (!Array.isArray(this._TypeOutSignals) || this._TypeOutSignals.length !== this._QuantityChannel)
+            throw new Error('_TypeOutSignals must be an array length of _QuantityChannel');
+        
         if (opts.pinModes) {
-            for (let i = 0; i < this._QuantityChannel;i++) 
+            // Установка режимов согласно конфигу
+            this._Pins.forEach((_pin, i) => {
                 this.Configure(i, { mode: opts.pinModes[i] });
+            });
+        } else {
+            // Конфигурация по умолчанию
+            this._Pins.forEach((_pin, i) => { _pin.mode('output'); });
         }
     }
-    On(_chNum, _val, _opts) {
-        let opts = _opts || {};
-        let curr_mode = this._Pins[_chNum].getMode();
-        if (! (OUTPUT_PIN_MODES.includes(curr_mode) || opts.force)) return false;
+    /**
+     * @method
+     * @description Подает сигнал на порт
+     * @param {number} _chNum 
+     * @param {number} _val 
+     * @param {object} _opts 
+     * @returns 
+     */
+    SetValue(_chNum, _val, _opts) {
         let val = E.clip(_val, 0, 1);
 
-        this.Write(this._Pins[_chNum], val, opts);
-        this._ChStatus[_chNum] = Math.round(val);
-        return true;
+        this.Write(this._Pins[_chNum], val, _opts);
+        this._Channels[_chNum].Status = (_val == 0) ? 0 : 1;
+        return this;
     }
-    Off(_chNum) {
-        if (!this._Pins[_chNum]) return false;
-
-        this.Write(this._Pins[_chNum], 0);
-        this._ChStatus[_chNum] = 0;
-        return true;
-    }
-
+    /**
+     * @method
+     * @description Выполняет запись сигнала на порт
+     * @param {Pin} _pin 
+     * @param {number} _val 
+     * @param {object} _opts 
+     */
     Write(_pin, _val, _opts) {
-        print(arguments);
-        if (this._TypeInSignals[this._Pins.indexOf(_pin)] == 'analog')
-            analogWrite(_pin, _val, _opts);
-        
+        if (this._TypeOutSignals[this._Pins.indexOf(_pin)] == 'pwm') {
+            analogWrite(_pin, _val, _opts);   
+        }
         else digitalWrite(_pin, _val);
     }
-
+    /**
+     * @method
+     * @description Конфигурирует режим порта
+     * @param {number} _chNum 
+     * @param {object} _opts 
+     * @returns 
+     */
     Configure(_chNum, _opts) {
         if (!OUTPUT_PIN_MODES.includes(_opts.mode))
             return false;
         this._Pins[_chNum].mode(_opts.mode); 
-        return true;
+        return this;
     }
+    /**
+     * @method
+     * @description Возвращает объект с информацией о порте
+     * @param {number} _chNum 
+     * @returns 
+     */
     GetInfo(_chNum) {
         return Object.assign(this._Pins[_chNum].getInfo(), { mode: this._Pins[_chNum].getMode() }); 
     }

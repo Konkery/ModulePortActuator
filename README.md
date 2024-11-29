@@ -21,7 +21,7 @@
 
 ### ModuleDigitalActuator и ModuleAnalogActuator
 Технически ModuleActuatorPort реализует закладывает логику, относящуюся к актуатору как цифрового порта, так и аналогового. 
-А метод взаимодействия с портом (аналог/цифра) определяется конфигом (см. [конструктор](./README.md#конструктор)).
+А метод взаимодействия с портом (pwm/цифра) определяется конфигом (см. [конструктор](./README.md#конструктор)).
 
 Каждый i-й канал сенсора относится к i-му переданному в конфиге порту. 
 
@@ -37,11 +37,9 @@
     "name": "PortActuator",
     "article": "",
     "type": "actuator",
-    "channelNames": ["analog", "digital"],
-    "typeInSignals": ["analog", "digital"],   // Внимание: именно это поле определяет как модуль будет взаимодействовать с данными портами 
+    "channelNames":  ["dpwm", "ds"],
+    "typeOutSignals": ["pwm", "digital"],   // Внимание: именно это поле определяет как модуль будет взаимодействовать с данными портами 
     "quantityChannel": 2,
-    "busTypes": [],
-    "manufacturingData": {},
     "modules": ["ModulePortActuator.min.js"]
 }
 ```
@@ -49,8 +47,7 @@
 ### Методы
 <div style = "color: #555">
 
-- <mark style="background-color: lightblue">On(_chNum, val, _opts)</mark> - подает сигнал на порт;
-- <mark style="background-color: lightblue">Off(_chNum)</mark> - прерывает подачу сигнала на порт;
+- <mark style="background-color: lightblue">SetValue(_chNum, val, _opts)</mark> - подает сигнал на порт;
 - <mark style="background-color: lightblue">Configure(_chNum, _opts)</mark> - настраивает режим работы порта;
 - <mark style="background-color: lightblue">GetInfo(_chNum)</mark> - выводит информацию о порте.
 </div>
@@ -64,13 +61,13 @@
 let a_ports = SensorManager.CreateDevice('21');
 
 // Явное задание режима порта
-a_ports[0].Configure(mode: 'af_output');
-a_ports[1].Configure(mode: 'output');
+a_ports[0].Configure({ mode: 'af_output' });
+a_ports[1].Configure({ mode: 'output' });
 
 // Подадим аналоговый сигнал на А0
-a_ports[0].On(0.5, { freq: 50 });  
+a_ports[0].SetValue(0.5, { freq: 50 });  
 // Подадим цифровой сигнал на P12
-a_ports[1].On(1); 
+a_ports[1].SetValue(1); 
 
 ```
 
